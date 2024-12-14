@@ -1,7 +1,10 @@
 {
   "dependencies": {
+    "ejs": "^3.1.10",
     "express": "^4.21.1",
-    "lite-server": "^2.6.1"
+    "lite-server": "^2.6.1",
+    "mongoose": "^8.8.2",
+    "node": "^20.18.1"
   },
   "name": "camp-out---camping-website",
   "version": "1.0.0",
