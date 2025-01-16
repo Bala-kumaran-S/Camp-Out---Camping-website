@@ -1,0 +1,90 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const { db,admin } = require('./../firebase.js')
+const flash = require('express-flash');
+const session = require('express-session');
+const LocalStrategy = require('passport-local').Strategy;
+const passport = require('passport');
+
+
+router.get('/register',(req, res) => {
+  res.render('./user/register')
+})
+
+router.post('/register', async (req, res) => {
+    const { name, email, password } = req.body;
+  
+    if (!name || !email || !password) {
+      req.flash('error', 'All fields are required.');
+      return res.redirect('/register');
+    }
+  
+    try {
+      const userSnapshot = await db.collection('users').where('email', '==', email).get();
+      if (!userSnapshot.empty) {
+        req.flash('error', 'Email is already registered.');
+        return res.redirect('/register');
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await db.collection('users').add({
+        name,
+        email,
+        password: hashedPassword
+      });
+      req.flash('success', 'Registration successful! Please log in.');
+      res.redirect('/login');
+    } catch (err) {
+      req.flash('error', 'Something went wrong. Please try again.');
+      res.redirect('/register');
+    }
+  });
+
+  router.get('/login',(req, res) => {
+    res.render('./user/login')
+  })
+
+  router.post('/login', (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+        if (err) {
+            return next(err);
+        }
+        
+        if (!user) {
+            req.flash('error', 'Invalid username or password');
+            return res.redirect('/login');
+        }
+
+        req.logIn(user, (err) => {
+            if (err) {
+                return next(err);
+            }
+
+            // Set cookie before redirect
+            res.cookie('userId', user.id, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 24 * 60 * 60 * 1000 // 1 day
+            });
+
+            req.flash('success', 'Welcome back!');
+            return res.redirect('/camps');
+        });
+    })(req, res, next);
+});
+  
+  // Logout route
+  router.get('/logout', (req, res) => {
+    req.logout(err => {
+      res.clearCookie('userId', { path: '/' });
+      if (err) {
+        return next(err);
+      }
+
+      req.flash('success', 'You have logged out.');
+      res.redirect('/login');
+    });
+  });
+  
+module.exports = router;

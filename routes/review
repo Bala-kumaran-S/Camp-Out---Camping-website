@@ -1,0 +1,72 @@
+const express = require('express');
+const router = express.Router();
+const { db,admin } = require('./../firebase.js')
+const {isLoggedIn, isCampAuthor } = require('../middleWare.js')
+
+router.post('/camps/:id/reviews', isLoggedIn, async (req, res) => {
+  const { id } = req.params;
+  const { rating, comment } = req.body;
+  const userId = req.cookies.userId;
+
+  try {
+    const campDoc = await db.collection('campgrounds').doc(id).get();
+    const campData = campDoc.data();
+    
+    // Add new review with author ID
+    const newReview = {
+      userId,
+      rating: parseInt(rating),
+      comment,
+      createdAt: new Date()
+    };
+
+    await db.collection('campgrounds').doc(id).update({
+      reviews: [...campData.reviews, newReview]
+    });
+
+    req.flash('success', 'Review added successfully');
+    res.redirect(`/camps/${id}`);
+  } catch (error) {
+    console.error('Error:', error);
+    req.flash('error', 'Failed to add review');
+    res.redirect(`/camps/${id}`);
+  }
+});
+
+// Update review
+router.put('/camps/:campId/reviews/:reviewIndex', isLoggedIn, async (req, res) => {
+  const { campId, reviewIndex } = req.params;
+  const { rating, comment } = req.body;
+  const userId = req.cookies.userId;
+
+  try {
+    const campDoc = await db.collection('campgrounds').doc(campId).get();
+    const campData = campDoc.data();
+    
+    // Update specific review if user is author
+    const updatedReviews = campData.reviews.map((review, index) => {
+      if (index === parseInt(reviewIndex) && review.userId === userId) {
+        return {
+          ...review,
+          rating: parseInt(rating),
+          comment,
+          updatedAt: new Date()
+        };
+      }
+      return review;
+    });
+
+    await db.collection('campgrounds').doc(campId).update({
+      reviews: updatedReviews
+    });
+
+    req.flash('success', 'Review updated');
+    res.redirect(`/camps/${campId}`);
+  } catch (error) {
+    console.error('Error:', error);
+    req.flash('error', 'Failed to update review');
+    res.redirect(`/camps/${campId}`);
+  }
+});
+
+module.exports = router;

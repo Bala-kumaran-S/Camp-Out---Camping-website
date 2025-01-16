@@ -1,0 +1,167 @@
+const express = require('express');
+const router = express.Router();
+const { db,admin } = require('./../firebase.js')
+const {isLoggedIn, isCampAuthor } = require('../middleWare.js')
+const stripe = require('../stripe');
+
+router.get('/', async (req, res) => {
+    try {
+      const campgroundsSnapshot = await db.collection('campgrounds').get();
+      const campgrounds = campgroundsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+  
+      res.render('camps', { campgrounds });
+    } catch (error) {
+      console.error('Error retrieving campgrounds:', error);
+      res.status(500).send('An error occurred while fetching campgrounds.');
+    }
+  });
+  
+router.get('/new', isLoggedIn ,(req, res) => {
+    res.render('camps/create');
+  });
+  
+router.post('/', async (req, res) => {
+    const { title, description, price, imageUrl } = req.body;
+    const userId = req.cookies.userId;
+    const author = userId;
+    console.log('User ID: ', userId) 
+
+    if (!userId) {
+        req.flash('error', 'You must be logged in to create a campground.');
+        return res.redirect('/login');
+    }
+  
+    try {
+      // Save the new campground to Firestore
+      await db.collection('campgrounds').add({
+        title,
+        description,
+        price: parseFloat(price), // Ensure price is stored as a number
+        imageUrl,
+        author,
+        reviews: [], // Initialize with an empty reviews array
+      });
+  
+      res.redirect('/camps'); // Redirect to the campgrounds list page
+    } catch (error) {
+      console.error('Error creating a new campground:', error);
+      res.status(500).send('An error occurred while creating the campground.');
+    }
+  });
+  
+router.get('/:id',async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      const campDoc = await db.collection('campgrounds').doc(id).get();
+  
+      if (!campDoc.exists) {
+        return res.status(404).send('Campground not found!');
+      }
+  
+      const campground = { id: campDoc.id, ...campDoc.data() };
+  
+      // Replace `req.session.userId` with the actual method you're using to fetch the logged-in user's ID
+      const userId = req.cookies.userId;
+  
+      res.render('camps/show', { campground, userId });
+    } catch (error) {
+      console.error('Error fetching campground:', error);
+      res.status(500).send('An error occurred while fetching the campground.');
+    }
+  });
+  
+router.get('/:id/edit',isCampAuthor ,async (req, res) => {
+    const { id } = req.params;
+    console.log(id)
+    try {
+      const campDoc = await db.collection('campgrounds').doc(id).get();
+  
+      const campground = { id: campDoc.id, ...campDoc.data() };
+  
+      res.render('../views/camps/edit', { campground });
+    } catch (error) {
+      console.error('Error fetching campground for edit:', error);
+      res.status(500).send('An error occurred while fetching the campground.');
+    }
+  });
+  
+router.post('/:id/edit',isCampAuthor, async (req, res) => {
+    const { id } = req.params;
+    const { title, description, price } = req.body;
+  
+    try {
+      await db.collection('campgrounds').doc(id).update({
+        title,
+        description,
+        price,
+      });
+  
+      res.redirect(`/camps/${id}`);
+    } catch (error) {
+      console.error('Error updating campground:', error);
+      res.status(500).send('An error occurred while updating the campground.');
+    }
+  });
+  
+router.post('/:id/book', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+  
+    try {
+      // Fetch the user's bookings
+      const userDoc = await db.collection('users').doc(userId).get();
+  
+      if (!userDoc.exists) {
+        return res.send('User not found!');
+      }
+  
+      const user = userDoc.data();
+  
+      // Check if the user is the owner of the campground
+      const campDoc = await db.collection('campgrounds').doc(id).get();
+      const campground = campDoc.data();
+  
+      if (campground.author === userId) {
+        return res.send('You cannot book your own campground!');
+      }
+  
+      // Add the campground to the user's bookings
+      await db.collection('users').doc(userId).update({
+        bookings: firebase.firestore.FieldValue.arrayUnion(id),
+      });
+  
+      res.send('Booking successful!');
+    } catch (error) {
+      console.error('Error during booking:', error);
+      res.status(500).send('An error occurred during booking.');
+    }
+  });
+
+  router.post('/:id/pay', isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+    const { token } = req.body;
+  
+    try {
+      const campDoc = await db.collection('campgrounds').doc(id).get();
+      const campData = campDoc.data();
+  
+      const charge = await stripe.charges.create({
+        amount: campData.price * 100, // Stripe expects amount in cents
+        currency: 'usd',
+        description: `Payment for ${campData.title}`,
+        source: token,
+      });
+  
+      req.flash('success', 'Payment successful');
+      res.redirect(`/camps/${id}`);
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      req.flash('error', 'Payment failed');
+      res.redirect(`/camps/${id}`);
+    }
+  });
+module.exports = router;

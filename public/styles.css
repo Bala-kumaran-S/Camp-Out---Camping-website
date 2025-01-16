@@ -1,0 +1,31 @@
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: url('https://t4.ftcdn.net/jpg/00/72/11/13/240_F_72111370_8YYIrEBIWcH7Qr4n9x17Ypk29dHTP72O.jpg') no-repeat center center fixed;
+    background-size: cover;
+  }
+
+  .hero-section {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+  }
+
+  .hero-section h1 {
+    margin-bottom: 20px;
+    color: aliceblue;
+    font-weight: 600;
+  }
+
+  .hero-section p {
+    color: aliceblue;
+    font-weight: 400;
+  }
+  .hero-section .btn {
+    margin: 10px;
+    border: 2px solid #000000;
+  }

@@ -1,1 +1,7 @@
 node_modules
+creds.json
+.env
+firebase.js
+passport-config.js
+stripe.js
+
