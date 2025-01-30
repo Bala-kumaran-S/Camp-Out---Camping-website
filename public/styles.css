@@ -4,19 +4,22 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: url('https://t4.ftcdn.net/jpg/00/72/11/13/240_F_72111370_8YYIrEBIWcH7Qr4n9x17Ypk29dHTP72O.jpg') no-repeat center center fixed;
+    background: url('./imgs/patrick-hendry-eDgUyGu93Yw-unsplash-min.jpg') no-repeat center center fixed;
     background-size: cover;
   }
 
   .hero-section {
-    background-color: rgba(0, 0, 0, 0.5);
+    height: 400px;
+    background-color: rgba(0, 0, 0, 0.35);
     padding: 30px;
-    border-radius: 10px;
-    backdrop-filter: blur(5px);
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+    animation: fadeIn 1s ease-in-out;
   }
 
   .hero-section h1 {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    margin-top: 30px;
     color: aliceblue;
     font-weight: 600;
   }
@@ -24,8 +27,43 @@ body {
   .hero-section p {
     color: aliceblue;
     font-weight: 400;
+    margin-bottom: 40px;
   }
-  .hero-section .btn {
-    margin: 10px;
-    border: 2px solid #000000;
+  .hero-section .r-btn {
+    background: #007a5a;
+    color: #fff;
+    transition: all 75ms ease-in-out;
+    border: #007a5a 1px solid;
+    margin-right: 30px;
   }
+
+  .hero-section .r-btn:hover{
+    box-shadow: 0 1px 4px rgb(0 0 0 / 30%);
+}
+
+  .hero-section .l-btn {
+    
+    border: 1px solid #007a5a;
+    color: #007a5a;
+    background: #fff;
+    transition: all 80ms linear;
+    
+    
+  }
+
+  .hero-section .l-btn:hover{
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 8%);
+    background: rgba(248,248,248,1);
+}
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
