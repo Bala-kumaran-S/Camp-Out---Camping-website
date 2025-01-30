@@ -4,4 +4,4 @@ creds.json
 firebase.js
 passport-config.js
 stripe.js
-
+public/imgs
