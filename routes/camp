@@ -4,7 +4,7 @@ const { db,admin } = require('./../firebase.js')
 const {isLoggedIn, isCampAuthor } = require('../middleWare.js')
 const stripe = require('../stripe');
 
-router.get('/', async (req, res) => {
+router.get('/',isLoggedIn , async (req, res) => {
     try {
       const campgroundsSnapshot = await db.collection('campgrounds').get();
       const campgrounds = campgroundsSnapshot.docs.map(doc => ({
